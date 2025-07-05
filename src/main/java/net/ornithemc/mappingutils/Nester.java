@@ -101,6 +101,11 @@ class Nester {
 			public String mapParameter(String className, String methodName, String methodDesc, String parameterName, int index) {
 				return parameterName;
 			}
+
+			@Override
+			public String mapLocal(String className, String methodName, String methodDesc, String localName, int index) {
+				return localName;
+			}
 		};
 	}
 

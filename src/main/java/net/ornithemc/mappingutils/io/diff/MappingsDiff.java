@@ -1,15 +1,7 @@
 package net.ornithemc.mappingutils.io.diff;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.TreeMap;
 
 import org.objectweb.asm.Type;
 
@@ -306,6 +298,14 @@ public class MappingsDiff {
 			return (ParameterDiff)getChild(MappingTarget.PARAMETER, key);
 		}
 
+		public final ParameterDiff getLocal(String name, int index) {
+			return getLocal(ParameterDiff.key(name, index));
+		}
+
+		private ParameterDiff getLocal(String key) {
+			return (ParameterDiff)getChild(MappingTarget.LOCAL, key);
+		}
+
 		public final Collection<Diff> getChildren() {
 			return children.values();
 		}
@@ -349,6 +349,10 @@ public class MappingsDiff {
 			return castChildren(MappingTarget.PARAMETER);
 		}
 
+		public final Collection<ParameterDiff> getLocals() {
+			return castChildren(MappingTarget.LOCAL);
+		}
+
 		public final Collection<Diff> getChildren(String id) {
 			if (childrenById == null) {
 				throw new UnsupportedOperationException("these diffs are not cached by id!");
@@ -367,6 +371,8 @@ public class MappingsDiff {
 				return addMethod(key, dstA, dstB);
 			case PARAMETER:
 				return addParameter(key, dstA, dstB);
+			case LOCAL:
+				return addLocal(key, dstA, dstB);
 			}
 
 			throw new IllegalStateException("invalid child target " + target);
@@ -439,6 +445,18 @@ public class MappingsDiff {
 			return (ParameterDiff)addChild(m);
 		}
 
+		public final ParameterDiff addLocal(String src, String dstA, String dstB, int index) {
+			return addLocal(ParameterDiff.key(src, index), dstA, dstB);
+		}
+
+		private ParameterDiff addLocal(String key, String dstA, String dstB) {
+			return addLocal(new ParameterDiff(key, dstA, dstB, true));
+		}
+
+		public ParameterDiff addLocal(ParameterDiff m) {
+			return (ParameterDiff)addChild(m);
+		}
+
 		public final Diff removeChild(MappingTarget target, String key) {
 			Diff d = getChild(target, key);
 			return d == null ? null : removeChild(d);
@@ -504,6 +522,18 @@ public class MappingsDiff {
 		}
 
 		public ParameterDiff removeParameter(ParameterDiff p) {
+			return (ParameterDiff)removeChild(p);
+		}
+
+		public final ParameterDiff removeLocal(String name, int index) {
+			return removeLocal(ParameterDiff.key(name, index));
+		}
+
+		private ParameterDiff removeLocal(String key) {
+			return removeLocal(getLocal(key));
+		}
+
+		public ParameterDiff removeLocal(ParameterDiff p) {
 			return (ParameterDiff)removeChild(p);
 		}
 
@@ -614,6 +644,7 @@ public class MappingsDiff {
 	public static class MethodDiff extends Diff {
 
 		private final ParameterDiff[] parameters;
+		private final Map<Integer, ParameterDiff> locals;
 
 		private String desc;
 
@@ -625,6 +656,7 @@ public class MappingsDiff {
 			super(src, dstA, dstB);
 
 			this.parameters = new ParameterDiff[parameterCount(desc)];
+			this.locals = new HashMap<>();
 
 			this.desc = desc;
 		}
@@ -686,6 +718,32 @@ public class MappingsDiff {
 			return p;
 		}
 
+		@Override
+		public ParameterDiff addLocal(ParameterDiff l) {
+			l = super.addLocal(l);
+
+			if (l != null) {
+				if (l.index < 0 || l.index >= parameters.length) {
+					throw new IndexOutOfBoundsException("Trying to add local of negative index " + l.index);
+				}
+
+				parameters[l.index] = l;
+			}
+
+			return l;
+		}
+
+		@Override
+		public ParameterDiff removeLocal(ParameterDiff l) {
+			l = super.removeLocal(l);
+
+			if (l != null) {
+				locals.remove(l.index);
+			}
+
+			return l;
+		}
+
 		public String getDesc() {
 			return desc;
 		}
@@ -706,12 +764,17 @@ public class MappingsDiff {
 	public static class ParameterDiff extends Diff {
 
 		private final int index;
+		private final boolean local;
 
 		private ParameterDiff(String key, String dstA, String dstB) {
-			this(key.substring(key.indexOf(':') + 1), dstA, dstB, Integer.parseInt(key.substring(0, key.indexOf(':'))));
+			this(key, dstA, dstB, false);
 		}
 
-		private ParameterDiff(String src, String dstA, String dstB, int index) {
+		private ParameterDiff(String key, String dstA, String dstB, boolean local) {
+			this(key.substring(key.indexOf(':') + 1), dstA, dstB, Integer.parseInt(key.substring(0, key.indexOf(':'))), local);
+		}
+
+		private ParameterDiff(String src, String dstA, String dstB, int index, boolean local) {
 			super(src, dstA, dstB);
 
 			if (index < 0) {
@@ -719,6 +782,7 @@ public class MappingsDiff {
 			}
 
 			this.index = index;
+			this.local = local;
 		}
 
 		private static String key(String name, int index) {
@@ -742,6 +806,10 @@ public class MappingsDiff {
 
 		public int getIndex() {
 			return index;
+		}
+
+		public boolean isLocal() {
+			return local;
 		}
 	}
 

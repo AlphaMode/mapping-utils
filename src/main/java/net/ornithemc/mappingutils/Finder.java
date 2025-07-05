@@ -106,6 +106,7 @@ class Finder {
 			}
 		case FIELD:
 		case METHOD:
+		case LOCAL:
 		case PARAMETER:
 			if (key.indexOf(':') < 0) {
 				// search for matches to name
@@ -143,6 +144,7 @@ class Finder {
 			}
 		case FIELD:
 		case METHOD:
+		case LOCAL:
 		case PARAMETER:
 			if (key.indexOf(':') < 0) {
 				// search for matches to name

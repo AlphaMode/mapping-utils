@@ -61,6 +61,7 @@ public interface MappingValidator {
 			return validate((FieldMapping)mapping);
 		case METHOD:
 			return validate((MethodMapping)mapping);
+		case LOCAL:
 		case PARAMETER:
 			return validate((ParameterMapping)mapping);
 		default:

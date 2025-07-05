@@ -109,12 +109,16 @@ public class TinyV2Writer extends TinyMappingsWriter {
 		for (ParameterMapping p : m.getParameters()) {
 			writeParameter(p);
 		}
+
+		for (ParameterMapping p : m.getLocals()) {
+			writeParameter(p);
+		}
 	}
 
 	private void writeParameter(ParameterMapping p) throws IOException {
 		indent(TinyV2Format.PARAMETER_INDENTS);
 
-		writer.write(TinyV2Format.PARAMETER);
+		writer.write(p.isLocal() ? TinyV2Format.LOCAL : TinyV2Format.PARAMETER);
 		writer.write(TAB);
 		writer.write(Integer.toString(p.getIndex()));
 		writer.write(TAB);

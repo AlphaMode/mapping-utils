@@ -10,6 +10,7 @@ class TinyV2Format {
 	static final String FIELD = "f";
 	static final String METHOD = "m";
 	static final String PARAMETER = "p";
+	static final String LOCAL = "v";
 	static final String COMMENT = "c";
 
 	static final int CLASS_INDENTS = 0;

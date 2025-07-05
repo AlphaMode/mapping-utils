@@ -30,6 +30,11 @@ public interface Mapper {
 		public String mapParameter(String className, String methodName, String methodDesc, String parameterName, int index) {
 			return parameterName;
 		}
+
+		@Override
+		public String mapLocal(String className, String methodName, String methodDesc, String localName, int index) {
+			return localName;
+		}
 	};
 
 	public static Mapper of(Mappings mappings) {
@@ -61,6 +66,14 @@ public interface Mapper {
 				MethodMapping m = (c == null) ? null : c.getMethod(methodName, methodDesc);
 				ParameterMapping p = (m == null) ? null : m.getParameter(index);
 				return p == null || p.get().isEmpty() ? parameterName : p.get();
+			}
+
+			@Override
+			public String mapLocal(String className, String methodName, String methodDesc, String localName, int index) {
+				ClassMapping c = mappings.getClass(className);
+				MethodMapping m = (c == null) ? null : c.getMethod(methodName, methodDesc);
+				ParameterMapping p = (m == null) ? null : m.getLocal(index);
+				return p == null || p.get().isEmpty() ? localName : p.get();
 			}
 		};
 	}
@@ -94,6 +107,12 @@ public interface Mapper {
 		case METHOD:
 			MethodMapping m = (MethodMapping)mapping;
 			m.set(mapper.mapMethod(m.getParent().src(), m.src(), m.getDesc(), m.get()));
+
+			break;
+		case LOCAL:
+			ParameterMapping l = (ParameterMapping)mapping;
+			MethodMapping lm = l.getParent();
+			l.set(mapper.mapLocal(lm.getParent().src(), lm.src(), lm.getDesc(), l.src(), l.getIndex(), l.get()));
 
 			break;
 		case PARAMETER:
@@ -130,5 +149,11 @@ public interface Mapper {
 	}
 
 	String mapParameter(String className, String methodName, String methodDesc, String parameterName, int index);
+
+	default String mapLocal(String className, String methodName, String methodDesc, String localName, int index, String mapping) {
+		return mapLocal(className, methodName, methodDesc, localName, index);
+	}
+
+	String mapLocal(String className, String methodName, String methodDesc, String localName, int index);
 
 }

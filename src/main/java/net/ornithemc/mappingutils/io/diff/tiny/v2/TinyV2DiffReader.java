@@ -230,6 +230,32 @@ public class TinyV2DiffReader extends TinyDiffReader {
 			f = null;
 
 			break;
+		case TinyV2Format.LOCAL:
+			if (indents != TinyV2Format.PARAMETER_INDENTS) {
+				throw new IllegalStateException("illegal number of indents (" + indents + ") for local mapping on line " + lineNumber + " - expected " + TinyV2Format.PARAMETER_INDENTS);
+			}
+			if (ac < 3 || ac > 5) {
+				throw new IllegalStateException("illegal number of arguments (" + ac + ") for local mapping on line " + lineNumber + " - expected 3-5");
+			}
+			if (m == null) {
+				throw new IllegalStateException("cannot read local mapping on line " + lineNumber + " - not in a method?");
+			}
+
+			String rawLocalIndex = args[1 + indents];
+			src = args[2 + indents]; // we could ignore this argument
+			dstA = (ac < 4) ? "" : args[3 + indents];
+			dstB = (ac < 5) ? "" : args[4 + indents];
+
+			int localIndex = Integer.parseInt(rawLocalIndex);
+
+			if (localIndex < 0) {
+				throw new IllegalStateException("illegal local index " + localIndex + " on line " + lineNumber + " - cannot be negative!");
+			}
+
+			p = m.addLocal(src, dstA, dstB, localIndex);
+			f = null;
+
+			break;
 		default:
 			throw new IllegalStateException("unknown mapping target " + args[indents] + " on line " + lineNumber + " - " + Arrays.toString(args));
 		}

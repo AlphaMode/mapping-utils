@@ -407,7 +407,7 @@ class Propagator {
 			return;
 		}
 
-		if (d.target() == MappingTarget.PARAMETER) {
+		if (d.target() == MappingTarget.PARAMETER || d.target() == MappingTarget.LOCAL) {
 			return;
 		}
 

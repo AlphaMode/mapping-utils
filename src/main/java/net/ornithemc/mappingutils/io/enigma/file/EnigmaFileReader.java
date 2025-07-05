@@ -227,6 +227,24 @@ public class EnigmaFileReader {
 			}
 
 			return ((MethodMapping)parent).addParameter("", dst, index);
+		case  EnigmaFileFormat.LOCAL:
+			if (args.length != 3) {
+				throw new IllegalStateException("illegal number of arguments (" + args.length + ") for local mapping on line " + lineNumber + " - expected 3");
+			}
+			if (parent == null || parent.target() != MappingTarget.METHOD) {
+				throw new IllegalStateException("invalid hierarchy on line " + lineNumber + ": a parameter must be the child of a method");
+			}
+
+			String rawLocalIndex = args[1];
+			dst = args[2];
+
+			int localIndex = Integer.parseInt(rawLocalIndex);
+
+			if (localIndex < 0) {
+				throw new IllegalStateException("illegal parameter index " + localIndex + " on line " + lineNumber + " - cannot be negative!");
+			}
+
+			return ((MethodMapping)parent).addLocal("", dst, localIndex);
 		case EnigmaFileFormat.COMMENT:
 			if (parent == null) {
 				throw new IllegalStateException("invalid hierarchy on line " + lineNumber + ": javadocs must have a parent");

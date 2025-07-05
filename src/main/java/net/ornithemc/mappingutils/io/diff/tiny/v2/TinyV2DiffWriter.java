@@ -119,12 +119,16 @@ public class TinyV2DiffWriter extends TinyDiffWriter {
 		for (ParameterDiff p : m.getParameters()) {
 			writeParameter(p);
 		}
+
+		for (ParameterDiff p : m.getLocals()) {
+			writeParameter(p);
+		}
 	}
 
 	private void writeParameter(ParameterDiff p) throws IOException {
 		indent(TinyV2Format.PARAMETER_INDENTS);
 
-		writer.write(TinyV2Format.PARAMETER);
+		writer.write(p.isLocal() ? TinyV2Format.LOCAL : TinyV2Format.PARAMETER);
 		writer.write(TAB);
 		writer.write(Integer.toString(p.getIndex()));
 		writer.write(TAB);

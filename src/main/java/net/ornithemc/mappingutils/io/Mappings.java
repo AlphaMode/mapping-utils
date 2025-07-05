@@ -1,16 +1,7 @@
 package net.ornithemc.mappingutils.io;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Objects;
-import java.util.TreeMap;
 
 import org.objectweb.asm.Type;
 
@@ -377,6 +368,10 @@ public class Mappings {
 			return castChildren(MappingTarget.PARAMETER);
 		}
 
+		public final Collection<ParameterMapping> getLocals() {
+			return castChildren(MappingTarget.LOCAL);
+		}
+
 		public final Collection<Mapping> getChildren(String id) {
 			if (childrenById == null) {
 				throw new UnsupportedOperationException("these mappings are not cached by id!");
@@ -395,6 +390,8 @@ public class Mappings {
 				return addMethod(key, dst);
 			case PARAMETER:
 				return addParameter(key, dst);
+			case LOCAL:
+				return addLocal(key, dst);
 			}
 
 			throw new IllegalStateException("invalid child target " + target);
@@ -460,10 +457,22 @@ public class Mappings {
 		}
 
 		private ParameterMapping addParameter(String key, String dst) {
-			return addParameter(new ParameterMapping(key, dst));
+			return addParameter(new ParameterMapping(key, dst, false));
 		}
 
 		public ParameterMapping addParameter(ParameterMapping m) {
+			return (ParameterMapping)addChild(m);
+		}
+
+		public final ParameterMapping addLocal(String src, String dst, int index) {
+			return addParameter(ParameterMapping.key(src, index), dst);
+		}
+
+		public final ParameterMapping addLocal(String src, String dst) {
+			return addLocal(new ParameterMapping(src, dst, true));
+		}
+
+		public ParameterMapping addLocal(ParameterMapping m) {
 			return (ParameterMapping)addChild(m);
 		}
 
@@ -532,6 +541,18 @@ public class Mappings {
 		}
 
 		public ParameterMapping removeParameter(ParameterMapping p) {
+			return (ParameterMapping)removeChild(p);
+		}
+
+		public final ParameterMapping removeLocal(String name, int index) {
+			return removeLocal(ParameterMapping.key(name, index));
+		}
+
+		private ParameterMapping removeLocal(String key) {
+			return removeLocal(getParameter(key));
+		}
+
+		public ParameterMapping removeLocal(ParameterMapping p) {
 			return (ParameterMapping)removeChild(p);
 		}
 
@@ -747,6 +768,7 @@ public class Mappings {
 	public static class MethodMapping extends Mapping {
 
 		private final ParameterMapping[] parameters;
+		private final Map<Integer, ParameterMapping> locals;
 
 		private String desc;
 
@@ -758,6 +780,7 @@ public class Mappings {
 			super(src, dst);
 
 			this.parameters = new ParameterMapping[parameterCount(desc)];
+			this.locals = new HashMap<>();
 
 			this.desc = desc;
 		}
@@ -829,6 +852,32 @@ public class Mappings {
 			return p;
 		}
 
+		@Override
+		public ParameterMapping addLocal(ParameterMapping l) {
+			l = super.addLocal(l);
+
+			if (l != null) {
+				if (l.index < 0) {
+					throw new IndexOutOfBoundsException("Trying to add local of negative index " + l.index);
+				}
+
+				locals.put(l.index, l);
+			}
+
+			return l;
+		}
+
+		@Override
+		public ParameterMapping removeLocal(ParameterMapping l) {
+			l = super.removeLocal(l);
+
+			if (l != null) {
+				locals.remove(l.index);
+			}
+
+			return l;
+		}
+
 		public String getDesc() {
 			return desc;
 		}
@@ -844,17 +893,30 @@ public class Mappings {
 		public ParameterMapping removeParameter(int index) {
 			return removeParameter(getParameter(index));
 		}
+
+		public ParameterMapping getLocal(int index) {
+			return locals.get(index);
+		}
+
+		public ParameterMapping removeLocal(int index) {
+			return removeLocal(getLocal(index));
+		}
 	}
 
 	public static class ParameterMapping extends Mapping {
 
 		private final int index;
+		private final boolean local;
 
-		private ParameterMapping(String key, String dst) {
-			this(key.substring(key.indexOf(':') + 1), dst, Integer.parseInt(key.substring(0, key.indexOf(':'))));
+		private ParameterMapping(String key, String dst, boolean local) {
+			this(key.substring(key.indexOf(':') + 1), dst, Integer.parseInt(key.substring(0, key.indexOf(':'))), local);
 		}
 
 		private ParameterMapping(String src, String dst, int index) {
+			this(src, dst, index, false);
+		}
+
+		private ParameterMapping(String src, String dst, int index, boolean local) {
 			super(src, dst);
 
 			if (index < 0) {
@@ -862,6 +924,7 @@ public class Mappings {
 			}
 
 			this.index = index;
+			this.local = local;
 		}
 
 		private static String key(String name, int index) {
@@ -870,7 +933,7 @@ public class Mappings {
 
 		@Override
 		public MappingTarget target() {
-			return MappingTarget.PARAMETER;
+			return local ? MappingTarget.LOCAL : MappingTarget.PARAMETER;
 		}
 
 		@Override
@@ -895,6 +958,10 @@ public class Mappings {
 
 		public int getIndex() {
 			return index;
+		}
+
+		public boolean isLocal() {
+			return local;
 		}
 	}
 

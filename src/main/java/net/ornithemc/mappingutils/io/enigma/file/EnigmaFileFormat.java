@@ -6,6 +6,7 @@ class EnigmaFileFormat {
 	static final String FIELD = "FIELD";
 	static final String METHOD = "METHOD";
 	static final String PARAMETER = "ARG";
+	static final String LOCAL = "LOCAL";
 	static final String COMMENT = "COMMENT";
 	static final String MODIFIER = "ACC:";
 

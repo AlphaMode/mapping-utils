@@ -76,6 +76,8 @@ public class EnigmaFileWriter {
 		case PARAMETER:
 			writeParameter((ParameterMapping)m);
 			break;
+		case LOCAL:
+			writeLocal((ParameterMapping)m);
 		default:
 			throw new IllegalStateException("unknown mapping target " + m.target());
 		}
@@ -91,6 +93,9 @@ public class EnigmaFileWriter {
 			writeMapping(mm);
 		}
 		for (Mapping mm : m.getChildren(MappingTarget.PARAMETER)) {
+			writeMapping(mm);
+		}
+		for (Mapping mm : m.getChildren(MappingTarget.LOCAL)) {
 			writeMapping(mm);
 		}
 		for (Mapping mm : m.getChildren(MappingTarget.CLASS)) {
@@ -139,6 +144,16 @@ public class EnigmaFileWriter {
 
 	private void writeParameter(ParameterMapping p) throws IOException {
 		writer.write(EnigmaFileFormat.PARAMETER);
+		writer.write(SPACE);
+		writer.write(Integer.toString(p.getIndex()));
+		writer.write(SPACE);
+		writer.write(p.get());
+		writer.newLine();
+	}
+
+	// Pretty much the same as writeParameter but fabric spec also includes, start offset, table index, and the variable index. just leaving this here as a note
+	private void writeLocal(ParameterMapping p) throws IOException {
+		writer.write(EnigmaFileFormat.LOCAL);
 		writer.write(SPACE);
 		writer.write(Integer.toString(p.getIndex()));
 		writer.write(SPACE);
